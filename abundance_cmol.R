@@ -10,15 +10,18 @@ library(RColorBrewer)
 library(forcats)
 library(ggrepel)
 library(patchwork)
+options(scipen=999)
 
 ##load data
 df <- read_excel(here::here("data/abundance.xlsx"),"Sheet2")
 
 
-##if no error, use 15% above and below
+##if no error, use 25% above and below. 25% was the avergae error above and below 
+##the estimate for the 90% credible intervals from McNay et al. 2022, and represents a reasonable measure
+##of the likely uncertainty in estimates that we don't have error for.
 df <- df%>%
-  mutate(lower=case_when(is.na(lower)~N-(N*.15), TRUE~lower),
-         upper=case_when(is.na(upper)~N+(N*.15), TRUE~upper))
+  mutate(lower=case_when(is.na(lower)~N-(N*.25), TRUE~lower),
+         upper=case_when(is.na(upper)~N+(N*.25), TRUE~upper))
 
 ##plot
 abundance <- ggplot(df%>%filter(!Species%in%"Atlantic cod (Canada)"), aes(x=Year, y=N, ymin=lower,ymax=upper))+
