@@ -25,7 +25,7 @@ df <- df%>%
 
 ##plot
 abundance <- ggplot(df%>%filter(!Species%in%"Atlantic cod (Canada)"), aes(x=Year, y=N, ymin=lower,ymax=upper))+
-  geom_smooth(linetype="dashed",color="black",size=0.5)+
+  geom_smooth(linetype="dashed",color="black",size=0.5, method="loess")+
   geom_text_repel(
     data=df%>%filter(Species%in%"American bison" & Year==2022),
     aes(label=format(N, big.mark = ",",
@@ -101,11 +101,12 @@ abundance
 ##maps
 na <-st_read(here::here("data/administrative/North_America.shp"))%>%
   mutate(place="US/CA")%>%
-  select(place)%>%
+  select(place, FID_canada)%>%
   st_transform("+proj=lcc +lon_0=-90 +lat_1=33 +lat_2=45")%>%
   rbind(st_read(here::here("data/administrative/Mexico.shp"))%>%
-          mutate(place="Mex")%>%
-          select(place)%>%
+          mutate(place="Mex",
+                 FID_canada=NA)%>%
+          select(place,FID_canada)%>%
           st_transform("+proj=lcc +lon_0=-90 +lat_1=33 +lat_2=45"))
 
 #bison
@@ -164,7 +165,8 @@ salm <- salm%>%
                             period="current")%>%
                      select(sp,period))
         )%>%
-  st_intersection(na%>%group_by()%>%summarise())
+  st_intersection(na%>%group_by()%>%summarise())%>%
+  st_erase(na%>%filter(FID_canada==8))
 
 
 
@@ -238,3 +240,12 @@ bou.needed <-harvest.needed/0.03
 #   filter(herd=="Klinse-Za")%>%
 #   mutate(area=st_area(.)/1E6)
 ##KZ herd area=6452 km2
+# library(rgbif)
+# 
+# coho <- occ_search(scientificName = "Oncorhynchus kisutch")
+# coho.map <-coho$data%>%
+#   drop_na(decimalLatitude)%>%
+#   st_as_sf(coords=c("decimalLongitude","decimalLatitude"),
+#            crs=4326)
+# 
+# mapview(coho.map,z="year")
